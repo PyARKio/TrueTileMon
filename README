@@ -1,0 +1,12 @@
+🔄 Автозапуск (опційно)
+Щоб додати у автозапуск:
+
+Натисни Win + R, введи shell:startup
+
+Створи ярлик до твого system_monitor.py або .bat файлу
+
+Ярлик буде запускатися після входу в систему
+
+
+TrueTileMon is a lightweight, tile-style system monitor designed for seamless integration with the Windows taskbar. Inspired by TrueLaunchBar aesthetics, it displays real-time CPU usage per core, RAM stats, battery status, and more — all in a compact, customizable UI. Ideal for users who want instant system feedback without clutter.
+
