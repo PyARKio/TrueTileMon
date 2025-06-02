@@ -21,8 +21,11 @@ __description__ = "System monitor"
 
 
 # ToDo: Date -> 28 травня 2025 14:42
-# ToDo: додати логіку на відклюення/підключення детектора(додати ручний режим); додати сетінги; рефакторинг існуючого
-# ToDo: Додати відображення часу що лишився до запуску клікера; скільки часу вже працю клікер
+# Done: додати логіку на відклюення/підключення детектора(додати ручний режим);
+# ToDo: додати сетінги;
+# ToDo: рефакторинг існуючого
+# ToDo: Додати відображення часу що лишився до запуску клікера;
+# ToDo: скільки часу вже працює клікер
 # ToDo: Додати час роботи клікера (тобто, перестати клікати з 18:00)
 
 
@@ -36,18 +39,24 @@ class Mouse(BaseChild):
         self.last_activity = time.time()
         self.stop_clicking = threading.Event()
 
-        self._mouse_flag = False
+        self._mouse_id = False
         self._detector_flag = True
         self.mouse_state = "OFF"
         self.detector_state = "ON"
         self.child_window.title(f"{core_label} Details")
-        # ToDo: оптимізувати
         # self.child_window.geometry(f"{self.child_weight}x{self.child_height}+{self.x_child_pos}+{self.y_child_pos}")
 
-        label = tk.Label(self.child_window, text=f"Mouse-> {core_label} clicked!", fg="white", bg="#1e1e1e", font=("Segoe UI", 10))
-        label.pack(expand=True, padx=20, pady=20)
+        # args_dict = {"fg": "white", "bg": "#1e1e1e", "font": ("Segoe UI", 10), "anchor": "w"}
+        # args_dict["text"] = f"Inactivity timeout: {Mouse.INACTIVITY_TIMEOUT} sec"
 
-        self._mouse_stop_button = tk.Button(self.child_window, text="Mouse Stop", command=self.on_button_stop, fg="white", bg="#333333",
+        self._inactivity_timeout_label = tk.Label(self.child_window, text=f"Inactivity timeout: {Mouse.INACTIVITY_TIMEOUT} sec", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
+        self._inactivity_timeout_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._time_since_label = tk.Label(self.child_window, text="Time since: - sec", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
+        self._time_since_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._time_for_label = tk.Label(self.child_window, text="Time for: - sec", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
+        self._time_for_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+
+        self._mouse_stop_button = tk.Button(self.child_window, text=f"Mouse {self.mouse_state}", command=self.on_button_stop, fg="white", bg="#333333",
                         activebackground="#444444", activeforeground="white", relief="flat", bd=0, font=("Segoe UI", 10))
         self._mouse_stop_button.pack(side="left", padx=3, pady=3)
 
@@ -79,6 +88,7 @@ class Mouse(BaseChild):
     def auto_clicker(self):
         while self._detector_flag:
             time_since = time.time() - self.last_activity
+            # self._time_since_label.config(text=f"Time since: {time_since} sec")
             if time_since > Mouse.WARNING_WINDOW_TIMEOUT:
                 log.warning(f"Mouse will be activated after {int(Mouse.INACTIVITY_TIMEOUT - time_since)} seconds")
                 self._popup.label(message=f"Mouse will be activated after {int(Mouse.INACTIVITY_TIMEOUT - time_since)} seconds")
@@ -98,30 +108,28 @@ class Mouse(BaseChild):
         self.detector_state = "OFF"
         self._cursor_detector_button.config(text=f"Detector-> {self.detector_state}")
 
-    @staticmethod
-    def get_screen_size(direction):
-        user32 = ctypes.windll.user32
-        if direction == "x":
-            return user32.GetSystemMetrics(0)
-        elif direction == "y":
-            return user32.GetSystemMetrics(1)
-
     # +++  MANUAL ++++++++++++++++++++++++++++
     """
     Виключно ручне ввімкнення і виключно ручне вимкнення
     Вмикати і вимикати через кнопку Mouse Start/Stop
-    
     """
+    def _click(self):
+        mouse.click()
+        self._mouse_id = self.child_window.after(30000, self._click)
+
+    # +++ Buttons and Other +++++++++++++++++++
     def on_button_stop(self):
-        self._mouse_flag = False
-        # if self.mouse_state == "OFF":
-        #     self.mouse_state = "ON"
-        #     self._mouse_flag = True
-        #     threading.Thread(target=self._mouse_imitation, daemon=True).start()
-        #     self._t_s = time.time()
+        if self._mouse_id:
+            self.child_window.after_cancel(self._mouse_id)
+            self._mouse_id = None
+            self.mouse_state = "OFF"
+        else:
+            self.mouse_state = "ON"
+            mouse.move(20, 1065)
+            self._click()
+        self._mouse_stop_button.config(text=f"Mouse {self.mouse_state}")
 
     def on_button_detector(self):
-        log.warning('detecrot')
         if self.detector_state == "OFF":
             self.detector_state = "ON"
             self._detector_flag = True
@@ -131,16 +139,12 @@ class Mouse(BaseChild):
         else:
             self._detector_flag = False
             self.detector_state = "Waiting..."
-        log.warning(f"State-> {self.detector_state} Flag-> {self._detector_flag}")
         self._cursor_detector_button.config(text=f"Detector-> {self.detector_state}")
 
-    def _mouse_imitation(self):
-        mouse.move(20, 1065)
-
-        while self._mouse_flag:
-            self._click()
-        self.mouse_state = "OFF"
-
-    def _click(self):
-        mouse.click()
-        self.child_window.after(3000, self._click)
+    @staticmethod
+    def get_screen_size(direction):
+        user32 = ctypes.windll.user32
+        if direction == "x":
+            return user32.GetSystemMetrics(0)
+        elif direction == "y":
+            return user32.GetSystemMetrics(1)
