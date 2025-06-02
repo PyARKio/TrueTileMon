@@ -30,109 +30,67 @@ class Battery(BaseChild):
         self.child_window.title(f"{core_label} Details")
         self.child_window.geometry(f"{self.width}x{self.height+325}+{self.x_child_pos}+{self.y_child_pos - 265}")
 
-        self.c = wmi.WMI()
+        self.c = wmi.WMI(namespace="root\\CIMV2")
         self.t = wmi.WMI(moniker="//./root/wmi")
+        self._create_labels()
+        self._update_labels()
 
+        self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black', highlightthickness=0)
+        self.canvas.pack()
+        self.bat_history = [0] * self.history_length
+        self.lines = [[] for _ in range(1)]  # зберігає id ліній
+        self.bat_color = 'skyblue'
+        self.update_usage()
+
+    def update_usage(self):
+        battery = psutil.sensors_battery()
+
+        self.bat_history.append(battery.percent)
+        if len(self.bat_history) > self.history_length:
+            self.bat_history.pop(0)
+
+        if self._build_flag:
+            self.draw_graph()
+
+        self.child_window.after(3000, self.update_usage)
+
+    def _update_labels(self):
         batts1 = self.c.CIM_Battery(Caption='Portable Battery')
         for i, b in enumerate(batts1):
             _message = f"Battery {i} Design Capacity: {b.DesignCapacity or 0} mWh"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._design_capacity_label.config(text=_message)
         batts = self.t.ExecQuery('Select * from BatteryFullChargedCapacity')
         for i, b in enumerate(batts):
             _message = f"Battery {i} Fully Charged Capacity: {b.FullChargedCapacity} mWh"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._real_capacity_label.config(text=_message)
         batts = self.t.ExecQuery('Select * from BatteryStatus where Voltage > 0')
         for i, b in enumerate(batts):
             _message = f"Name:                {b.InstanceName}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._instance_name_label.config(text=_message)
             _message = f"PowerOnline:         {b.PowerOnline}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._power_online_label.config(text=_message)
             _message = f"Discharging:       {b.Discharging}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._discharging_label.config(text=_message)
             _message = f"Charging:          {b.Charging}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._charging_label.config(text=_message)
             _message = f"Voltage:           {b.Voltage / 1000} V"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._voltage_label.config(text=_message)
             _message = f"DischargeCurrent:  {b.DischargeRate / b.Voltage} A"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._discharge_current_label.config(text=_message)
             _message = f"ChargeCurrent:     {b.ChargeRate / b.Voltage} A"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._charge_current_label.config(text=_message)
             _message = f"DischargeRate:     {b.DischargeRate / 1000} W"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._discharge_rate_label.config(text=_message)
             _message = f"ChargeRate:        {b.ChargeRate / 1000} W"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._charge_rate_label.config(text=_message)
             _message = f"RemainingCapacity: {b.RemainingCapacity / 1000} W"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._remaining_capacity_label.config(text=_message)
             _message = f"Active:            {b.Active}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+            self._active_label.config(text=_message)
             _message = f"Critical:          {b.Critical}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+            self._critical_label.config(text=_message)
 
-        self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black',
-                                highlightthickness=0)
-        self.canvas.pack()
-
-        self.bat_history = [0] * self.history_length
-        self.lines = [[] for _ in range(1)]  # зберігає id ліній
-
-        self.bat_color = 'skyblue'
-
-        self.update_thread = threading.Thread(target=self.update_usage)
-        self.update_thread.daemon = True
-        self.update_thread.start()
-
-    def show(self):
-        self.child_window.deiconify()
-        self.child_window.lift()
-
-    def hide(self):
-        self.child_window.withdraw()
-
-    def update_usage(self):
-        while True:
-            battery = psutil.sensors_battery()
-
-            self.bat_history.append(battery.percent)
-            if len(self.bat_history) > self.history_length:
-                self.bat_history.pop(0)
-
-            # if battery:
-            #     percent = battery.percent
-            #     plugged = battery.power_plugged
-            #     status = "⚡" if plugged else "🔋"
-            #     self.battery_label.config(text=f"{status} {percent:.0f}%")
-            # else:
-            #     self.battery_label.config(text="No Battery")
-
-            self.draw_graph()
-            time.sleep(1)
+        self.child_window.after(1000, self._update_labels)
 
     def draw_graph(self):
         x_offset = 0  # горизонтальне розміщення
@@ -162,80 +120,46 @@ class Battery(BaseChild):
         self.canvas.create_text(x_offset + 2, self.height - 25, anchor='sw', fill='white',
                                 font=('Segoe UI', 8), text=f"Battery: {self.bat_history[-1]:.0f}%", tags=tag)
 
-    def _update_labels(self):
-        batts1 = self.c.CIM_Battery(Caption='Portable Battery')
-        for i, b in enumerate(batts1):
-            _message = f"Battery {i} Design Capacity: {b.DesignCapacity or 0} mWh"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-        batts = self.t.ExecQuery('Select * from BatteryFullChargedCapacity')
-        for i, b in enumerate(batts):
-            _message = f"Battery {i} Fully Charged Capacity: {b.FullChargedCapacity} mWh"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-        batts = self.t.ExecQuery('Select * from BatteryStatus where Voltage > 0')
-        for i, b in enumerate(batts):
-            _message = f"Name:                {b.InstanceName}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"PowerOnline:         {b.PowerOnline}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"Discharging:       {b.Discharging}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"Charging:          {b.Charging}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"Voltage:           {b.Voltage / 1000} V"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"DischargeCurrent:  {b.DischargeRate / b.Voltage} A"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"ChargeCurrent:     {b.ChargeRate / b.Voltage} A"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"DischargeRate:     {b.DischargeRate / 1000} W"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"ChargeRate:        {b.ChargeRate / 1000} W"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"RemainingCapacity: {b.RemainingCapacity / 1000} W"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"Active:            {b.Active}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-            _message = f"Critical:          {b.Critical}"
-            label = tk.Label(self.child_window, text=_message, fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                             anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
+    def _create_labels(self):
+        self._design_capacity_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                               font=("Segoe UI", 10), anchor='w')
+        self._design_capacity_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._real_capacity_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                             font=("Segoe UI", 10), anchor='w')
+        self._real_capacity_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._instance_name_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                             font=("Segoe UI", 10), anchor='w')
+        self._instance_name_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._power_online_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                            font=("Segoe UI", 10), anchor='w')
+        self._power_online_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._discharging_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
+                                           anchor='w')
+        self._discharging_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._charging_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
+                                        anchor='w')
+        self._charging_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._voltage_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
+                                       anchor='w')
+        self._voltage_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._discharge_current_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                                 font=("Segoe UI", 10), anchor='w')
+        self._discharge_current_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._charge_current_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                              font=("Segoe UI", 10), anchor='w')
+        self._charge_current_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._discharge_rate_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                              font=("Segoe UI", 10), anchor='w')
+        self._discharge_rate_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._charge_rate_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
+                                           anchor='w')
+        self._charge_rate_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._remaining_capacity_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
+                                                  font=("Segoe UI", 10), anchor='w')
+        self._remaining_capacity_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._active_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
+                                      anchor='w')
+        self._active_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._critical_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
+                                        anchor='w')
+        self._critical_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')

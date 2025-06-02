@@ -22,10 +22,12 @@ __description__ = "System monitor"
 
 # ToDo: Date -> 28 травня 2025 14:42
 # ToDo: додати логіку на відклюення/підключення детектора(додати ручний режим); додати сетінги; рефакторинг існуючого
+# ToDo: Додати відображення часу що лишився до запуску клікера; скільки часу вже працю клікер
+# ToDo: Додати час роботи клікера (тобто, перестати клікати з 18:00)
 
 
 class Mouse(BaseChild):
-    INACTIVITY_TIMEOUT = 240  # 3 хвилини
+    INACTIVITY_TIMEOUT = 240  # 4 хвилини
     WARNING_WINDOW_TIMEOUT = INACTIVITY_TIMEOUT - 15
     CLICK_INTERVAL = 10  # 10 секунд
 
@@ -34,13 +36,10 @@ class Mouse(BaseChild):
         self.last_activity = time.time()
         self.stop_clicking = threading.Event()
 
-        self._t_s = 0
-        self._cursor_time = time.time()
-        self._cursor_position = (0, 0)
         self._mouse_flag = False
-        self._detector_flag = False
+        self._detector_flag = True
         self.mouse_state = "OFF"
-        self.detector_state = "OFF"
+        self.detector_state = "ON"
         self.child_window.title(f"{core_label} Details")
         # ToDo: оптимізувати
         # self.child_window.geometry(f"{self.child_weight}x{self.child_height}+{self.x_child_pos}+{self.y_child_pos}")
@@ -56,7 +55,6 @@ class Mouse(BaseChild):
                         fg="white", bg="#333333", activebackground="#444444", activeforeground="white", relief="flat",
                         bd=0, font=("Segoe UI", 10))
         self._cursor_detector_button.pack(side="left", padx=3, pady=3)
-
         self._popup = BasePopup(weight=400, height=250, x=int((self.get_screen_size("x")/2)-200), y=int((self.get_screen_size("y")/2)-125))
 
         threading.Thread(target=self.activity_listener, daemon=True).start()
@@ -67,7 +65,9 @@ class Mouse(BaseChild):
     # +++ AUTODETECTOR ++++++++++++++++++
     def activity_listener(self):
         def on_event(e):
-            if isinstance(e, mouse.MoveEvent):
+            if not self._detector_flag:
+                mouse.unhook(on_event)
+            elif isinstance(e, mouse.MoveEvent):
                 try:
                     self._popup.hide()
                 except Exception as err:
@@ -77,7 +77,7 @@ class Mouse(BaseChild):
         mouse.hook(on_event)
 
     def auto_clicker(self):
-        while True:
+        while self._detector_flag:
             time_since = time.time() - self.last_activity
             if time_since > Mouse.WARNING_WINDOW_TIMEOUT:
                 log.warning(f"Mouse will be activated after {int(Mouse.INACTIVITY_TIMEOUT - time_since)} seconds")
@@ -91,13 +91,15 @@ class Mouse(BaseChild):
                 self.mouse_state = "ON"
                 while not self.stop_clicking.is_set():
                     mouse.click('left')
-                    # log.info("[AUTO] Clicked at (0, bottom)")
                     time.sleep(Mouse.CLICK_INTERVAL)
                 self.mouse_state = "OFF"
             else:
                 time.sleep(1)
+        self.detector_state = "OFF"
+        self._cursor_detector_button.config(text=f"Detector-> {self.detector_state}")
 
-    def get_screen_size(self, direction):
+    @staticmethod
+    def get_screen_size(direction):
         user32 = ctypes.windll.user32
         if direction == "x":
             return user32.GetSystemMetrics(0)
@@ -105,35 +107,35 @@ class Mouse(BaseChild):
             return user32.GetSystemMetrics(1)
 
     # +++  MANUAL ++++++++++++++++++++++++++++
+    """
+    Виключно ручне ввімкнення і виключно ручне вимкнення
+    Вмикати і вимикати через кнопку Mouse Start/Stop
+    
+    """
     def on_button_stop(self):
         self._mouse_flag = False
-
-    def on_button_detector(self):
-        log.warning('detecrot')
-        if self.detector_state == "OFF":
-            self.detector_state = "ON"
-            self._detector_flag = True
-            threading.Thread(target=self._cursor_detector, daemon=True).start()
-        else:
-            self._detector_flag = False
-            self.detector_state = "Waiting..."
-        self._cursor_detector_button.config(text=f"Detector-> {self.detector_state}")
-
-    def show(self):
         # if self.mouse_state == "OFF":
         #     self.mouse_state = "ON"
         #     self._mouse_flag = True
         #     threading.Thread(target=self._mouse_imitation, daemon=True).start()
         #     self._t_s = time.time()
 
-        self.child_window.deiconify()
-        self.child_window.lift()
-
-    def hide(self):
-        self.child_window.withdraw()
+    def on_button_detector(self):
+        log.warning('detecrot')
+        if self.detector_state == "OFF":
+            self.detector_state = "ON"
+            self._detector_flag = True
+            self.last_activity = time.time()
+            threading.Thread(target=self.activity_listener, daemon=True).start()
+            threading.Thread(target=self.auto_clicker, daemon=True).start()
+        else:
+            self._detector_flag = False
+            self.detector_state = "Waiting..."
+        log.warning(f"State-> {self.detector_state} Flag-> {self._detector_flag}")
+        self._cursor_detector_button.config(text=f"Detector-> {self.detector_state}")
 
     def _mouse_imitation(self):
-        self._move(20, 1065)
+        mouse.move(20, 1065)
 
         while self._mouse_flag:
             self._click()
@@ -141,30 +143,4 @@ class Mouse(BaseChild):
 
     def _click(self):
         mouse.click()
-        log.warning(time.time() - self._t_s)
-        sleep(10)
-
-    def _move(self, x, y):
-        mouse.move(x, y)
-
-    def _cursor_detector(self):
-        log.warning("Detector started...")
-        self._cursor_position = mouse.get_position()
-        self._cursor_time = time.time()
-
-        while self._detector_flag:
-            sleep(1)
-            log.warning(f"Current-> {mouse.get_position()} Saved-> {self._cursor_position}")
-            if mouse.get_position() != self._cursor_position:
-                log.warning("Saving")
-                self._cursor_position = mouse.get_position()
-                self._cursor_time = time.time()
-            else:
-                if time.time() - self._cursor_time > 5 and self.mouse_state == "OFF":
-                    log.warning("In progress")
-                    self.show()
-                # else:
-                #     log.warning("Already started")
-
-        self.detector_state = "OFF"
-        self._cursor_detector_button.config(text=f"Detector-> {self.detector_state}")
+        self.child_window.after(3000, self._click)

@@ -43,33 +43,21 @@ class RAM(BaseChild):
 
         self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black', highlightthickness=0)
         self.canvas.pack()
-
         self.ram_history = [0]*self.history_length
         self.lines = [[] for _ in range(1)]  # зберігає id ліній
-
         self.ram_color = 'skyblue'
-
-        self.update_thread = threading.Thread(target=self.update_usage)
-        self.update_thread.daemon = True
-        self.update_thread.start()
-
-    def show(self):
-        self.child_window.deiconify()
-        self.child_window.lift()
-
-    def hide(self):
-        self.child_window.withdraw()
+        self.update_usage()
 
     def update_usage(self):
-        while True:
-            ram = psutil.virtual_memory().percent
+        ram = psutil.virtual_memory().percent
+        self.ram_history.append(ram)
+        if len(self.ram_history) > self.history_length:
+            self.ram_history.pop(0)
 
-            self.ram_history.append(ram)
-            if len(self.ram_history) > self.history_length:
-                self.ram_history.pop(0)
-
+        if self._build_flag:
             self.draw_graph()
-            time.sleep(1)
+
+        self.child_window.after(1000, self.update_usage)
 
     def draw_graph(self):
         x_offset = 0  # горизонтальне розміщення

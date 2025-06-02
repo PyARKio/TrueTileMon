@@ -44,36 +44,26 @@ class CPU(BaseChild):
 
         self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black', highlightthickness=0)
         self.canvas.pack()
-
         self.usage_history = [[0]*self.history_length for _ in range(self.num_cores)]
         self.lines = [[] for _ in range(self.num_cores)]  # зберігає id ліній
-
         self.colors = self.generate_colors()
-
-        self.update_thread = threading.Thread(target=self.update_cpu)
-        self.update_thread.daemon = True
-        self.update_thread.start()
-
-    def show(self):
-        self.child_window.deiconify()
-        self.child_window.lift()
-
-    def hide(self):
-        self.child_window.withdraw()
+        self.update_cpu()
 
     def generate_colors(self):
         base_colors = ['lime', 'cyan', 'orange', 'yellow', 'magenta']
         return [random.choice(base_colors) for _ in range(self.num_cores)]
 
     def update_cpu(self):
-        while True:
-            usages = psutil.cpu_percent(percpu=True)
-            for i in range(self.num_cores):
-                self.usage_history[i].append(usages[i])
-                if len(self.usage_history[i]) > self.history_length:
-                    self.usage_history[i].pop(0)
+        usages = psutil.cpu_percent(percpu=True)
+        for i in range(self.num_cores):
+            self.usage_history[i].append(usages[i])
+            if len(self.usage_history[i]) > self.history_length:
+                self.usage_history[i].pop(0)
+
+        if self._build_flag:
             self.draw_graph()
-            time.sleep(1)
+
+        self.child_window.after(1000, self.update_cpu)
 
     def draw_graph(self):
         for core in range(self.num_cores):

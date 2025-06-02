@@ -1,7 +1,7 @@
 @echo off
-TITLE Mouse Imitation
+TITLE TrueTileMon
 COLOR 0a
 
-"C:\Users\VSFedorets\.virtualenvs\WinCheckSystemBot-TKrWkDUf/Scripts/python.exe" "C:\PythonPrjs\WinCheckSystemBot/mouse_imitation.py"
+"C:\Users\VSFedorets\.virtualenvs\TrueTileMon-x1DDogaz/Scripts/python.exe" "C:\PythonPrjs\TrueTileMon/TrueTileMon.py"
 
 pause

@@ -19,6 +19,7 @@ __description__ = "System monitor"
 
 class BaseChild:
     def __init__(self, root_class):
+        self._build_flag = False
         self.root_class = root_class
         self.root_window = self.root_class.root
 
@@ -37,6 +38,15 @@ class BaseChild:
 
     def get_y_child(self):
         return self.root_class.get_y_root() - 100
+
+    def show(self):
+        self._build_flag = True
+        self.child_window.deiconify()
+        self.child_window.lift()
+
+    def hide(self):
+        self._build_flag = False
+        self.child_window.withdraw()
 
 
 class BasePopup:

@@ -1,2 +1,7 @@
 .idea/
 *.pyc
+/__pycache__/
+GeneralArsenal/__pycache__/
+Graphical_Elements/__pycache__/
+Setup/__pycache__/
+Windows/__pycache__/
