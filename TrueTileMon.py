@@ -1,10 +1,8 @@
 # -- coding: utf-8 --
 from __future__ import unicode_literals
 import psutil
-import tkinter as tk
 import threading
 import time
-import random
 from Windows.Root import Root
 from Windows.Mouse import Mouse
 from Windows.CPU import CPU

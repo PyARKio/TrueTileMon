@@ -2,12 +2,6 @@
 from __future__ import unicode_literals
 import psutil
 import tkinter as tk
-import threading
-import time
-import random
-from time import sleep
-import mouse
-import datetime
 from Windows.Base import BaseChild
 import wmi
 
@@ -34,6 +28,9 @@ class Battery(BaseChild):
         self.t = wmi.WMI(moniker="//./root/wmi")
         self._create_labels()
         self._update_labels()
+
+        # self.canvas_volts = tk.Canvas(self.child_window, width=self.width, height=self.height+200, bg='black', highlightthickness=0)
+        # self.canvas_volts.pack()
 
         self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black', highlightthickness=0)
         self.canvas.pack()

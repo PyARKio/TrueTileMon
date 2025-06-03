@@ -2,12 +2,6 @@
 from __future__ import unicode_literals
 import psutil
 import tkinter as tk
-import threading
-import time
-import random
-from time import sleep
-import mouse
-import datetime
 from Windows.Base import BaseChild
 import wmi
 
