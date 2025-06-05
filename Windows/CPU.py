@@ -37,7 +37,7 @@ class CPU(BaseChild):
             label = tk.Label(self.child_window, text=f"Max Clock Speed: {cpu.MaxClockSpeed} MHz", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
             label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
 
-        self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black', highlightthickness=0)
+        self.canvas = tk.Canvas(width=self.width, height=self.height, **self.args_canvas_create)
         self.canvas.pack()
         self.usage_history = [[0]*self.history_length for _ in range(self.num_cores)]
         self.lines = [[] for _ in range(self.num_cores)]  # зберігає id ліній

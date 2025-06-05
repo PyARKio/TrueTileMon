@@ -36,6 +36,13 @@ class BaseChild:
         self.child_window.configure(bg="#1e1e1e")
         self.child_window.geometry(f"{self.child_weight}x{self.child_height}+{self.x_child_pos}+{self.y_child_pos}")
 
+        self.args_canvas_create = {"master": self.child_window, "bg": 'black', "highlightthickness": 0}
+        self.args_label_create = {"master": self.child_window, "fg": "white", "bg": "#1e1e1e", "font": ("Segoe UI", 10),"anchor": "w"}
+        self.args_label_pack = {"expand": True, "padx": 10, "pady": (0, 0), "anchor": 'w'}
+        self.args_button_create = {"master": self.child_window, "fg": "white", "bg": "#333333", "relief": "flat", "bd": 0,
+                                   "activebackground": "#444444", "activeforeground": "white", "font": ("Segoe UI", 10)}
+        self.args_button_pack = {"side": "left", "padx": 3, "pady": 3}
+
     def get_y_child(self):
         return self.root_class.get_y_root() - 100
 

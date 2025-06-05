@@ -32,7 +32,7 @@ class Battery(BaseChild):
         # self.canvas_volts = tk.Canvas(self.child_window, width=self.width, height=self.height+200, bg='black', highlightthickness=0)
         # self.canvas_volts.pack()
 
-        self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black', highlightthickness=0)
+        self.canvas = tk.Canvas(width=self.width, height=self.height, **self.args_canvas_create)
         self.canvas.pack()
         self.bat_history = [0] * self.history_length
         self.lines = [[] for _ in range(1)]  # зберігає id ліній

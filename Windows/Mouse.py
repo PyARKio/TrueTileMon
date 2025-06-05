@@ -42,25 +42,11 @@ class Mouse(BaseChild):
         self.child_window.title(f"{core_label} Details")
         # self.child_window.geometry(f"{self.child_weight}x{self.child_height}+{self.x_child_pos}+{self.y_child_pos}")
 
-        # args_dict = {"fg": "white", "bg": "#1e1e1e", "font": ("Segoe UI", 10), "anchor": "w"}
-        # args_dict["text"] = f"Inactivity timeout: {Mouse.INACTIVITY_TIMEOUT} sec"
+        self._create_labels()
+        self._create_buttons()
 
-        self._inactivity_timeout_label = tk.Label(self.child_window, text=f"Inactivity timeout: {Mouse.INACTIVITY_TIMEOUT} sec", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-        self._inactivity_timeout_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._time_since_label = tk.Label(self.child_window, text="Time since: - sec", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-        self._time_since_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._time_for_label = tk.Label(self.child_window, text="Time for: - sec", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-        self._time_for_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
-        self._mouse_stop_button = tk.Button(self.child_window, text=f"Mouse {self.mouse_state}", command=self.on_button_stop, fg="white", bg="#333333",
-                        activebackground="#444444", activeforeground="white", relief="flat", bd=0, font=("Segoe UI", 10))
-        self._mouse_stop_button.pack(side="left", padx=3, pady=3)
-
-        self._cursor_detector_button = tk.Button(self.child_window, text=f"Detector-> {self.detector_state}", command=self.on_button_detector,
-                        fg="white", bg="#333333", activebackground="#444444", activeforeground="white", relief="flat",
-                        bd=0, font=("Segoe UI", 10))
-        self._cursor_detector_button.pack(side="left", padx=3, pady=3)
-        self._popup = BasePopup(weight=400, height=250, x=int((self.get_screen_size("x")/2)-200), y=int((self.get_screen_size("y")/2)-125))
+        self._popup = BasePopup(weight=400, height=250, x=int((self.get_screen_size("x")/2)-200),
+                                y=int((self.get_screen_size("y")/2)-125))
 
         threading.Thread(target=self.activity_listener, daemon=True).start()
         threading.Thread(target=self.auto_clicker, daemon=True).start()
@@ -144,3 +130,27 @@ class Mouse(BaseChild):
             return user32.GetSystemMetrics(0)
         elif direction == "y":
             return user32.GetSystemMetrics(1)
+
+    def _create_labels(self):
+        self.args_label_create["text"] = f"Inactivity timeout: {Mouse.INACTIVITY_TIMEOUT} sec"
+        self._inactivity_timeout_label = tk.Label(**self.args_label_create)
+        self._inactivity_timeout_label.pack(**self.args_label_pack)
+
+        self.args_label_create["text"] = "Time since: - sec"
+        self._time_since_label = tk.Label(**self.args_label_create)
+        self._time_since_label.pack(**self.args_label_pack)
+
+        self.args_label_create["text"] = "Time for: - sec"
+        self._time_for_label = tk.Label(**self.args_label_create)
+        self._time_for_label.pack(**self.args_label_pack)
+
+    def _create_buttons(self):
+        self.args_button_create["text"] = f"Mouse {self.mouse_state}"
+        self.args_button_create["command"] = self.on_button_stop
+        self._mouse_stop_button = tk.Button(**self.args_button_create)
+        self._mouse_stop_button.pack(**self.args_button_pack)
+
+        self.args_button_create["text"] = f"Detector-> {self.detector_state}"
+        self.args_button_create["command"] = self.on_button_detector
+        self._cursor_detector_button = tk.Button(**self.args_button_create)
+        self._cursor_detector_button.pack(**self.args_button_pack)

@@ -26,16 +26,23 @@ class RAM(BaseChild):
 
         c = wmi.WMI()
         for mem in c.Win32_PhysicalMemory():
-            label = tk.Label(self.child_window, text=f"Capacity: {int(mem.Capacity) / (1024 ** 3):.2f} GB", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-            label = tk.Label(self.child_window, text=f"Speed: {mem.Speed} MHz", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-            label = tk.Label(self.child_window, text=f"Manufacturer: {mem.Manufacturer}", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-            label = tk.Label(self.child_window, text=f"Part Number: {mem.PartNumber.strip()}", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+            self.args_label_create["text"] = f"Capacity: {int(mem.Capacity) / (1024 ** 3):.2f} GB"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)
 
-        self.canvas = tk.Canvas(self.child_window, width=self.width, height=self.height, bg='black', highlightthickness=0)
+            self.args_label_create["text"] = f"Speed: {mem.Speed} MHz"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)
+
+            self.args_label_create["text"] = f"Manufacturer: {mem.Manufacturer}"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)
+
+            self.args_label_create["text"] = f"Part Number: {mem.PartNumber.strip()}"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)
+
+        self.canvas = tk.Canvas(width=self.width, height=self.height, **self.args_canvas_create)
         self.canvas.pack()
         self.ram_history = [0]*self.history_length
         self.lines = [[] for _ in range(1)]  # зберігає id ліній
