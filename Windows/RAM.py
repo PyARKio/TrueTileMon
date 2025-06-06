@@ -20,47 +20,31 @@ class RAM(BaseChild):
         self.height_per_section = 30
         self.width = self.child_weight + 500
         self.height = self.height_per_section + 10
+        self.ram_history = [0]*self.history_length
+        self.lines = [[] for _ in range(1)]  # зберігає id ліній
+        self.ram_color = 'skyblue'
 
         self.child_window.title(f"{core_label} Details")
         self.child_window.geometry(f"{self.width}x{self.height+100}+{self.x_child_pos}+{self.y_child_pos - 40}")
 
-        c = wmi.WMI()
-        for mem in c.Win32_PhysicalMemory():
-            self.args_label_create["text"] = f"Capacity: {int(mem.Capacity) / (1024 ** 3):.2f} GB"
-            label = tk.Label(**self.args_label_create)
-            label.pack(**self.args_label_pack)
-
-            self.args_label_create["text"] = f"Speed: {mem.Speed} MHz"
-            label = tk.Label(**self.args_label_create)
-            label.pack(**self.args_label_pack)
-
-            self.args_label_create["text"] = f"Manufacturer: {mem.Manufacturer}"
-            label = tk.Label(**self.args_label_create)
-            label.pack(**self.args_label_pack)
-
-            self.args_label_create["text"] = f"Part Number: {mem.PartNumber.strip()}"
-            label = tk.Label(**self.args_label_create)
-            label.pack(**self.args_label_pack)
-
         self.canvas = tk.Canvas(width=self.width, height=self.height, **self.args_canvas_create)
         self.canvas.pack()
-        self.ram_history = [0]*self.history_length
-        self.lines = [[] for _ in range(1)]  # зберігає id ліній
-        self.ram_color = 'skyblue'
-        self.update_usage()
 
-    def update_usage(self):
+        self._create_labels()
+        self._update_usage()
+
+    def _update_usage(self):
         ram = psutil.virtual_memory().percent
         self.ram_history.append(ram)
         if len(self.ram_history) > self.history_length:
             self.ram_history.pop(0)
 
         if self._build_flag:
-            self.draw_graph()
+            self._draw_graph()
 
-        self.child_window.after(1000, self.update_usage)
+        self.child_window.after(1000, self._update_usage)
 
-    def draw_graph(self):
+    def _draw_graph(self):
         x_offset = 0  # горизонтальне розміщення
         core = 0
 
@@ -87,3 +71,22 @@ class RAM(BaseChild):
         self.canvas.delete(tag)
         self.canvas.create_text(x_offset + 2, self.height - 25, anchor='sw', fill='white',
                                 font=('Segoe UI', 8), text=f"RAM: {self.ram_history[-1]:.0f}%", tags=tag)
+
+    def _create_labels(self):
+        c = wmi.WMI()
+        for mem in c.Win32_PhysicalMemory():
+            self.args_label_create["text"] = f"Capacity: {int(mem.Capacity) / (1024 ** 3):.2f} GB"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)
+
+            self.args_label_create["text"] = f"Speed: {mem.Speed} MHz"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)
+
+            self.args_label_create["text"] = f"Manufacturer: {mem.Manufacturer}"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)
+
+            self.args_label_create["text"] = f"Part Number: {mem.PartNumber.strip()}"
+            label = tk.Label(**self.args_label_create)
+            label.pack(**self.args_label_pack)

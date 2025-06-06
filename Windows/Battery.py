@@ -20,26 +20,25 @@ class Battery(BaseChild):
         self.height_per_section = 30
         self.width = self.child_weight + 500
         self.height = self.height_per_section + 10
+        self.bat_history = [0] * self.history_length
+        self.lines = [[] for _ in range(1)]  # зберігає id ліній
+        self.bat_color = 'skyblue'
+        self.c = wmi.WMI(namespace="root\\CIMV2")
+        self.t = wmi.WMI(moniker="//./root/wmi")
 
         self.child_window.title(f"{core_label} Details")
         self.child_window.geometry(f"{self.width}x{self.height+325}+{self.x_child_pos}+{self.y_child_pos - 265}")
 
-        self.c = wmi.WMI(namespace="root\\CIMV2")
-        self.t = wmi.WMI(moniker="//./root/wmi")
-        self._create_labels()
-        self._update_labels()
-
         # self.canvas_volts = tk.Canvas(self.child_window, width=self.width, height=self.height+200, bg='black', highlightthickness=0)
         # self.canvas_volts.pack()
-
         self.canvas = tk.Canvas(width=self.width, height=self.height, **self.args_canvas_create)
         self.canvas.pack()
-        self.bat_history = [0] * self.history_length
-        self.lines = [[] for _ in range(1)]  # зберігає id ліній
-        self.bat_color = 'skyblue'
-        self.update_usage()
 
-    def update_usage(self):
+        self._create_labels()
+        self._update_labels()
+        self._update_usage()
+
+    def _update_usage(self):
         battery = psutil.sensors_battery()
 
         self.bat_history.append(battery.percent)
@@ -47,9 +46,9 @@ class Battery(BaseChild):
             self.bat_history.pop(0)
 
         if self._build_flag:
-            self.draw_graph()
+            self._draw_graph()
 
-        self.child_window.after(3000, self.update_usage)
+        self.child_window.after(3000, self._update_usage)
 
     def _update_labels(self):
         batts1 = self.c.CIM_Battery(Caption='Portable Battery')
@@ -89,7 +88,7 @@ class Battery(BaseChild):
 
         self.child_window.after(1000, self._update_labels)
 
-    def draw_graph(self):
+    def _draw_graph(self):
         x_offset = 0  # горизонтальне розміщення
         core = 0
 
@@ -118,45 +117,44 @@ class Battery(BaseChild):
                                 font=('Segoe UI', 8), text=f"Battery: {self.bat_history[-1]:.0f}%", tags=tag)
 
     def _create_labels(self):
-        self._design_capacity_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                               font=("Segoe UI", 10), anchor='w')
-        self._design_capacity_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._real_capacity_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                             font=("Segoe UI", 10), anchor='w')
-        self._real_capacity_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._instance_name_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                             font=("Segoe UI", 10), anchor='w')
-        self._instance_name_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._power_online_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                            font=("Segoe UI", 10), anchor='w')
-        self._power_online_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._discharging_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                                           anchor='w')
-        self._discharging_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._charging_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                                        anchor='w')
-        self._charging_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._voltage_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                                       anchor='w')
-        self._voltage_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._discharge_current_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                                 font=("Segoe UI", 10), anchor='w')
-        self._discharge_current_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._charge_current_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                              font=("Segoe UI", 10), anchor='w')
-        self._charge_current_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._discharge_rate_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                              font=("Segoe UI", 10), anchor='w')
-        self._discharge_rate_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._charge_rate_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                                           anchor='w')
-        self._charge_rate_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._remaining_capacity_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e",
-                                                  font=("Segoe UI", 10), anchor='w')
-        self._remaining_capacity_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._active_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                                      anchor='w')
-        self._active_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-        self._critical_label = tk.Label(self.child_window, text="-", fg="white", bg="#1e1e1e", font=("Segoe UI", 10),
-                                        anchor='w')
-        self._critical_label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
+        self._design_capacity_label = tk.Label(text="-", **self.args_label_create)
+        self._design_capacity_label.pack(**self.args_label_pack)
+
+        self._real_capacity_label = tk.Label(text="-", **self.args_label_create)
+        self._real_capacity_label.pack(**self.args_label_pack)
+
+        self._instance_name_label = tk.Label(text="-", **self.args_label_create)
+        self._instance_name_label.pack(**self.args_label_pack)
+
+        self._power_online_label = tk.Label(text="-", **self.args_label_create)
+        self._power_online_label.pack(**self.args_label_pack)
+
+        self._discharging_label = tk.Label(text="-", **self.args_label_create)
+        self._discharging_label.pack(**self.args_label_pack)
+
+        self._charging_label = tk.Label(text="-", **self.args_label_create)
+        self._charging_label.pack(**self.args_label_pack)
+
+        self._voltage_label = tk.Label(text="-", **self.args_label_create)
+        self._voltage_label.pack(**self.args_label_pack)
+
+        self._discharge_current_label = tk.Label(text="-", **self.args_label_create)
+        self._discharge_current_label.pack(**self.args_label_pack)
+
+        self._charge_current_label = tk.Label(text="-", **self.args_label_create)
+        self._charge_current_label.pack(**self.args_label_pack)
+
+        self._discharge_rate_label = tk.Label(text="-", **self.args_label_create)
+        self._discharge_rate_label.pack(**self.args_label_pack)
+
+        self._charge_rate_label = tk.Label(text="-", **self.args_label_create)
+        self._charge_rate_label.pack(**self.args_label_pack)
+
+        self._remaining_capacity_label = tk.Label(text="-", **self.args_label_create)
+        self._remaining_capacity_label.pack(**self.args_label_pack)
+
+        self._active_label = tk.Label(text="-", **self.args_label_create)
+        self._active_label.pack(**self.args_label_pack)
+
+        self._critical_label = tk.Label(text="-", **self.args_label_create)
+        self._critical_label.pack(**self.args_label_pack)

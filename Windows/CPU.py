@@ -22,33 +22,24 @@ class CPU(BaseChild):
         self.height_per_core = 30
         self.width = self.num_cores * self.history_length
         self.height = self.height_per_core + 10
+        self.usage_history = [[0]*self.history_length for _ in range(self.num_cores)]
+        self.lines = [[] for _ in range(self.num_cores)]  # зберігає id ліній
+        self.colors = self._generate_colors()
 
         self.child_window.title(f"{core_label} Details")
         self.child_window.geometry(f"{self.width}x{self.height+100}+{self.x_child_pos}+{self.y_child_pos - 40}")
 
-        c = wmi.WMI()
-        for cpu in c.Win32_Processor():
-            label = tk.Label(self.child_window, text=f"Name: {cpu.Name.strip()}", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-            label = tk.Label(self.child_window, text=f"Cores: {cpu.NumberOfCores}", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-            label = tk.Label(self.child_window, text=f"Logical processors: {cpu.NumberOfLogicalProcessors}", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-            label = tk.Label(self.child_window, text=f"Max Clock Speed: {cpu.MaxClockSpeed} MHz", fg="white", bg="#1e1e1e", font=("Segoe UI", 10), anchor='w')
-            label.pack(expand=True, padx=10, pady=(0, 0), anchor='w')
-
         self.canvas = tk.Canvas(width=self.width, height=self.height, **self.args_canvas_create)
         self.canvas.pack()
-        self.usage_history = [[0]*self.history_length for _ in range(self.num_cores)]
-        self.lines = [[] for _ in range(self.num_cores)]  # зберігає id ліній
-        self.colors = self.generate_colors()
-        self.update_cpu()
 
-    def generate_colors(self):
+        self._create_labels()
+        self._update_cpu()
+
+    def _generate_colors(self):
         base_colors = ['lime', 'cyan', 'orange', 'yellow', 'magenta']
         return [random.choice(base_colors) for _ in range(self.num_cores)]
 
-    def update_cpu(self):
+    def _update_cpu(self):
         usages = psutil.cpu_percent(percpu=True)
         for i in range(self.num_cores):
             self.usage_history[i].append(usages[i])
@@ -56,11 +47,11 @@ class CPU(BaseChild):
                 self.usage_history[i].pop(0)
 
         if self._build_flag:
-            self.draw_graph()
+            self._draw_graph()
 
-        self.child_window.after(1000, self.update_cpu)
+        self.child_window.after(1000, self._update_cpu)
 
-    def draw_graph(self):
+    def _draw_graph(self):
         for core in range(self.num_cores):
             history = self.usage_history[core]
             color = self.colors[core]
@@ -89,3 +80,15 @@ class CPU(BaseChild):
             self.canvas.delete(tag)
             self.canvas.create_text(x_offset + 2, self.height - 25, anchor='sw', fill='white',
                                     font=('Segoe UI', 8), text=f"Core {core}: {history[-1]:.0f}%", tags=tag)
+
+    def _create_labels(self):
+        c = wmi.WMI()
+        for cpu in c.Win32_Processor():
+            label = tk.Label(text=f"Name: {cpu.Name.strip()}", **self.args_label_create)
+            label.pack(self.args_label_pack)
+            label = tk.Label(text=f"Cores: {cpu.NumberOfCores}", **self.args_label_create)
+            label.pack(self.args_label_pack)
+            label = tk.Label(text=f"Logical processors: {cpu.NumberOfLogicalProcessors}", **self.args_label_create)
+            label.pack(self.args_label_pack)
+            label = tk.Label(text=f"Max Clock Speed: {cpu.MaxClockSpeed} MHz", **self.args_label_create)
+            label.pack(self.args_label_pack)
